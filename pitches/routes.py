@@ -1,33 +1,21 @@
 import os
 import secrets
 from PIL import Image
-from flask import  render_template, url_for, flash, redirect, request
+from flask import  render_template, session, url_for, flash, redirect, request, abort
 from pitches import app, db, bcrypt
 from pitches.forms import RegistrationForm, LoginForm, UpdateAccountForm, PitchForm
 from pitches.models import User, Pitch
 from flask_login import login_user, current_user, logout_user, login_required
 
 
-posts = [
-    {
-        'author': 'Corey Schafer',
-        'title': 'Blog Post 1',
-        'content': 'First post content',
-        'date_posted': 'April 20, 2018'
-    },
-    {
-        'author': 'Jane Doe',
-        'title': 'Blog Post 2',
-        'content': 'Second post content',
-        'date_posted': 'April 21, 2018'
-    }
-]
+
 
 
 @app.route("/")
 @app.route("/home")
 def home():
-    return render_template('home.html' , posts=posts)
+    pitchs=Pitch.query.all()
+    return render_template('home.html' , pitchs=pitchs)
 
 
 @app.route("/about")
@@ -111,6 +99,48 @@ def account():
 def new_pitch():
     form = PitchForm()
     if form.validate_on_submit():
+        pitch = Pitch(title=form.title.data, content=form.content.data, author=current_user)
+        db.session.add(pitch)
+        db.session.commit()
         flash('Pitch has been made!', 'success')
         return redirect(url_for('home'))
-    return render_template('create_pitch.html', title='New Pitch', form=form)
+    return render_template('create_pitch.html', title='New Pitch', form=form, legend='New Pitch')
+
+@app.route("/pitch/<int:pitch_id>")
+def pitch(pitch_id):
+    pitch = Pitch.query.get_or_404(pitch_id)
+    return render_template('pitch.html' , title=pitch.title, pitch=pitch)
+
+@app.route("/pitch/<int:pitch_id>/update", methods= ['GET', 'POST'])
+@login_required
+def update_pitch(pitch_id):
+    pitch = Pitch.query.get_or_404(pitch_id)
+    if pitch.author != current_user:
+        abort(403)
+    form = PitchForm()
+    if form.validate_on_submit():
+        pitch.title = form.title.data
+        pitch.content = form.content.data
+        db.session.commit()
+        flash('pitch updated', 'danger')
+        return redirect(url_for('pitch', pitch_id=pitch.id))
+    elif request.method == 'GET':  
+        form.title.data = pitch.title
+        form.content.data = pitch.content
+    return render_template('create_pitch.html', title='Update Pitch', form=form, legend='Update Pitch')
+
+
+
+@app.route("/pitch/<int:pitch_id>/delete", methods= ['POST'])
+@login_required
+def delete_pitch(pitch_id):
+    pitch = Pitch.query.get_or_404(pitch_id)
+    if pitch.author != current_user:
+        abort(403)
+    db.session.delete(pitch)
+    db.session.commit()
+    flash('pitch has been deleted', 'success')
+    return redirect(url_for('home'))
+    
+    
+    
