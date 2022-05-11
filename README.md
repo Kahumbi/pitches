@@ -3,7 +3,7 @@
 ## Author [David Kahumbi]
 ​
 ## Description
-Juliza pitch is a web application that is used to highlight helpfull and motivating one minutes pitches that users can create and live behind for friends and family to find and read to inspire them 
+Juliza pitch is a web application that is used to highlight helpfull and motivating one minute pitches that users can create and live behind for friends and family to find and read to inspire them 
 to keep on going despite what they may be going through in life.
 ​
 ## Technologies Used
